@@ -446,6 +446,7 @@ def www_finish():
 
         req = "UPDATE test SET finished = 1 WHERE id = ?"
         DBConsumer.get_instance().execute(req, (test_id,))
+        flask.session.pop('test_id', None)
         res = True
     except AuthError as ex:
         flask.abort(flask.make_response(str(ex), 403))
