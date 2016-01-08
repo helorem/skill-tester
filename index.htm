@@ -1,0 +1,334 @@
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+		<script src="libs/jquery-2.1.1.js"></script>
+		<script src="libs/SemanticUI/semantic.js"></script>
+		<script src="js/functions.js"></script>
+		<script src="libs/codemirror/codemirror.js"></script>
+		<link rel="stylesheet" type="text/css" href="libs/SemanticUI/semantic.css" />
+		<link rel="stylesheet" type="text/css" href="libs/codemirror/codemirror.css" />
+		<link rel="stylesheet" type="text/css" href="css/header.css" />
+		<title>Skill Tester</title>
+		<style>
+			.ui.primary.button {
+				margin-top : 30px;
+			}
+
+			form label {
+				font-size : 1.2em;
+			}
+
+			.ui.checkbox label {
+				font-size : 1.2em;
+			}
+
+			.ui.form {
+				font-size : 1.2em;
+			}
+
+			.ui.button {
+				font-size : 1.2em;
+			}
+
+			.ui.main.text.container {
+				text-align : center;
+			}
+
+			h2 {
+				text-align : left;
+			}
+
+			p {
+				text-align : left;
+			}
+
+			.field {
+				text-align : left;
+			}
+
+			.fields {
+				text-align : left;
+				margin-top : 20px;
+			}
+
+			.question_label {
+				margin-top : 10px;
+				margin-bottom : 10px;
+				display : inline-block;
+			}
+
+			.field {
+				margin-top : 10px
+			}
+
+			.ui.pagination.menu {
+				margin-top : 10px;
+				margin-bottom : 20px;
+			}
+
+			.ui.pagination.menu .active.item {
+				font-weight : bold;
+			}
+
+			.ui.pagination.menu .done.item {
+				background-color : #BDCEFF;
+			}
+		</style>
+		<script type="text/javascript">
+
+			var MENU_PAGE_COUNT = 13;
+			var CREATORS = {
+					"qcm" : create_qcm,
+					"question" : create_question
+				};
+			var TOTAL = 0;
+
+			function create_question(data)
+			{
+				var $div = $('<div class="field question" />');
+				var $label = $('<label class="question_label" for="question" />').html(parseQCode(data["text"]));
+				$div.append($label);
+
+				var $input = $('<input type="text" name="answer" placeholder="Reponse" autocomplete="off" />').val(data["last_answer"]);
+				$div.append($input);
+
+				return $div;
+			}
+
+			function create_qcm(data)
+			{
+				var $div = $('<div class="grouped fields question" />');
+				var $label = $('<label class="question_label" for="question" />').html(parseQCode(data["text"]));
+				$div.append($label);
+
+				var options = data["options"];
+				var val;
+				var $field;
+				var $radio;
+				var $input;
+				for (var i in options)
+				{
+					val = options[i];
+					$field = $('<div class="field" />');
+					$div.append($field);
+
+					$radio = $('<div class="ui radio checkbox" />');
+					$field.append($radio);
+
+					$input = $('<input type="radio" name="answer" />').val(val);
+					if (val == data["last_answer"])
+					{
+						$input.attr('checked', 'true');
+					}
+					$radio.append($input);
+
+					$label = $('<label />').text(val);
+					$radio.append($label);
+				}
+				return $div;
+			}
+
+			function validate_over() {
+				console.debug();
+				var res = $.get("api/finish");
+				res.done(function(data) {document.location.assign("select_test.htm");});
+				res.fail(function(data) {console.error(data.responseText);});
+			}
+
+			function init_over()
+			{
+				var load_fct = function(data) {
+						TOTAL = data["total"];
+						init_navigation(-1, TOTAL, data["done"]);
+						$(".ui.main").css("visibility", "visible");
+					};
+
+				var data = {"num" : 1};
+				var res = $.post("api/ask_question", data, load_fct, "json");
+				res.fail(function(data) {
+						switch (data.status)
+						{
+							case 403:
+								document.location.assign("select_test.htm");
+								break;
+							default:
+								console.error(data.responseText);
+						}
+					});
+			}
+
+			function init(num)
+			{
+				var load_fct = function(data) {
+						if (!(data["type"] in CREATORS))
+						{
+							console.error("Wrong question type", data);
+							return;
+						}
+
+						$("h2").text("Question " + data["num"] + "/" + data["total"]);
+
+						TOTAL = data["total"];
+
+						init_navigation(data["num"], TOTAL, data["done"]);
+
+						var $root = $("form");
+						$root.empty();
+
+						var $elm;
+						$elm = $('<input type="hidden" name="num" />').val(data["num"]);
+						$root.append($elm);
+
+						$elm = CREATORS[data["type"]](data);
+						$root.append($elm);
+
+						$elm = $('<button class="ui primary button">Valider</button>');
+						$root.append($elm);
+
+						$('.ui.radio.checkbox').checkbox();
+
+						var language = data["language"].toLowerCase();
+						render_code(language, null, function() {$(".ui.main").css("visibility", "visible");});
+					};
+
+				if (!num)
+				{
+					num = 1;
+				}
+				var data = {"num" : num};
+				var res = $.post("api/ask_question", data, load_fct, "json");
+				res.fail(function(data) {
+						switch (data.status)
+						{
+							case 403:
+								document.location.assign("select_test.htm");
+								break;
+							default:
+								console.error(data.responseText);
+						}
+					});
+			}
+
+			function init_navigation(num, total, done)
+			{
+				var start = 1;
+				var end = total;
+
+				var num_margin = parseInt(MENU_PAGE_COUNT / 2);
+
+				if (num <= num_margin)
+				{
+					end = MENU_PAGE_COUNT;
+				}
+				else if (num >= (total - num_margin - 1))
+				{
+					start = total - MENU_PAGE_COUNT + 1;
+				}
+				else
+				{
+					start = num - num_margin;
+					end = num + num_margin;
+				}
+
+				if (start < 1)
+				{
+					start = 1;
+				}
+				if (end > total)
+				{
+					end = total;
+				}
+
+				var $root = $(".ui.pagination.menu");
+				var $link;
+
+				$link = $('<a class="item"><i class="angle double left icon"></i></a>').attr('href', '?num=1');
+				if (start == 1)
+				{
+					$link.addClass("disabled");
+				}
+				$root.append($link);
+
+				for (var i = start; i <= end; ++i)
+				{
+					$link = $('<a class="item"></a>').attr('href', '?num=' + i).text(i);
+					if (i == num)
+					{
+						$link.addClass("active");
+					}
+					if ($.inArray(i, done) != -1)
+					{
+						$link.addClass("done");
+					}
+					$root.append($link);
+				}
+
+				$link = $('<a class="item">Fin</a>').attr('href', '?over=true');
+				if (num == -1)
+				{
+					$link.addClass("active");
+				}
+				$root.append($link);
+
+				$link = $('<a class="item"><i class="angle double right icon"></i></a>').attr('href', '?num=' + total);
+				if (end == total)
+				{
+					$link.addClass("disabled");
+				}
+				$root.append($link);
+
+			}
+
+			function send_answer(form)
+			{
+				if (!form["num"])
+				{
+					return;
+				}
+
+				var answer = form["answer"].value;
+				var num = parseInt(form["num"].value);
+				console.debug(answer);
+				var data = {"num" : num, "answer" : answer};
+				var res = $.post("api/answer", data);
+				res.done(function(data) {
+						if (num == TOTAL)
+						{
+							document.location.assign("index.htm?over=true");
+						}
+						else
+						{
+							document.location.assign("index.htm?num=" + (num + 1));
+						}
+						});
+				res.fail(function(data) {console.error(data.responseText);});
+			}
+
+		</script>
+	</head>
+	<body>
+		<div class="ui main text container">
+			<div class="ui pagination menu"></div>
+			<h2 class="ui header">Fin du test</h2>
+			<form class="ui form" onsubmit="send_answer(this);return false;">
+				<p>Si vous le souhaitez, vous pouvez modifier vos reponses en cliquant sur le numero du test desire dans la barre de navigation.</p>
+				<p>Astuce : les tests en bleu sont les tests ayant ete repondus.</p>
+				<button class="ui primary button" type="submit" onclick="validate_over();return false;">Valider definitivement le test</button>
+			</form>
+		</div>
+		<script>
+			display_header("Test Technique");
+			$(".ui.main").css("visibility", "hidden");
+			var over = get_url_param("over");
+			if (over)
+			{
+				init_over();
+			}
+			else
+			{
+				var num = get_url_param("num");
+				init(num);
+			}
+		</script>
+	</body>
+</html>

@@ -1,0 +1,145 @@
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+		<script src="../libs/jquery-2.1.1.js"></script>
+		<script src="../libs/SemanticUI/semantic.js"></script>
+		<script src="../js/functions.js"></script>
+		<script src="../js/validation.js"></script>
+		<script src="js/functions.js"></script>
+		<script src="../libs/Highcharts/js/highcharts.js"></script>
+		<link rel="stylesheet" type="text/css" href="../libs/SemanticUI/semantic.css" />
+		<link rel="stylesheet" type="text/css" href="../css/header.css" />
+		<title>Skill Tester Test editor</title>
+		<style>
+			span.label {
+				font-weight : bold;
+			}
+		</style>
+		<script type="text/javascript">
+			function load(id)
+			{
+				/**
+				  * Load a test. (async)
+				  * @param id the id of the test
+				  */
+				var load_test_fct = function (data) {
+						$("#username").text(data["username"]);
+						$("#finished").text(data["finished"] == 1 ? "Oui" : "Non");
+						var line;
+						var $table = $('#questions');
+						var $tr;
+						var nb_questions = 0;
+						var nb_success = 0;
+						for (var i in data["questions"])
+						{
+							line = data["questions"][i];
+							$tr = $('<tr />')
+							if (line["success"] == 1)
+							{
+								$tr.addClass("positive");
+								$tr.append('<td class="collapsing"><i class="icon checkmark"></i></td>');
+								++nb_success;
+							}
+							else if (line["success"] == 0)
+							{
+								$tr.addClass("negative");
+								$tr.append('<td class="collapsing"><i class="icon close"></i></td>');
+							}
+							$tr.append($('<td />').text(line["name"]));
+							$tr.append($('<td />').text(line["language"]));
+							$tr.append($('<td />').text(line["type"]));
+						
+							var total_percent = Math.round((line["nb_success"] * 100) / line["nb_answers"]);
+							$tr.append($('<td />').text(total_percent + "% (" + line["nb_success"] + "/" + line["nb_answers"] + ")"));
+							$table.append($tr);
+							++nb_questions
+						}
+
+						chart(nb_success, nb_questions);
+					};
+
+				var data = {"id" : id};
+				var res = $.post("../api/admin/get_test", data, load_test_fct, "json");
+				res.fail(function(data) {console.error(data.responseText); show_message("Impossible de charger le test", "error")});
+			}
+
+			function chart(nb_success, nb_questions)
+			{
+				if (nb_questions <= 0)
+				{
+					return;
+				}
+				var percent = (nb_success * 100) / nb_questions;
+
+
+				$("#success_chart").highcharts({
+					chart: {
+						plotBackgroundColor: null,
+						plotBorderWidth: 0,
+						plotShadow: false
+					},
+					title: {
+						text: percent + "%",
+						align: 'center',
+						verticalAlign: 'middle',
+						y: 40
+					},
+					plotOptions: {
+						pie: {
+							dataLabels: {
+								enabled: false,
+							},
+							startAngle: -90,
+							endAngle: 90,
+							center: ['50%', 70],
+							size: 200
+						}
+					},
+					series: [{
+						colors : ['#B1FFA1', '#FFA1A1'],
+						type: 'pie',
+						innerSize: '50%',
+						data: [
+							['Vrai', percent],
+							['Faux', 100 - percent]
+						]
+					}],
+					credits : {
+						enabled : false
+					}
+				});
+			}
+		</script>
+	</head>
+	<body>
+		<script type="text/javascript">
+			test_logged();
+		</script>
+		<h1>Details du test</h1>
+		<div class="ui icon menu">
+			<a class="item" href="tests.htm"><i class="arrow left icon"></i></a>
+		</div>
+		<p><span class="label">Nom du participant :</span> <span id="username" /></p>
+		<p><span class="label">Test termin&eacute; ? :</span> <span id="finished" /></p>
+		<span class="label">Reussite :</span>
+		<div id="success_chart" style="width: 200px; height: 100px; margin: 0 0"></div>
+		<br />
+		<span class="label">Questions :</span>
+		<table id="questions" class="ui single line table">
+			<thead>
+				<tr>
+					<th class="collapsing">&nbsp;</th>
+					<th>Nom</th>
+					<th>Langage</th>
+					<th>Type</th>
+					<th>Moyenne des participants</th>
+				</tr>
+			<tbody>
+		</table>
+		<script type="text/javascript">
+			display_header("Administration des Tests Techniques", "..");
+			var id = get_url_param("id");
+			load(id);
+		</script>
+	</body>
+</html>

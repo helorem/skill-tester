@@ -1,0 +1,379 @@
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+		<script src="../libs/jquery-2.1.1.js"></script>
+		<script src="../libs/SemanticUI/semantic.js"></script>
+		<script src="../js/functions.js"></script>
+		<script src="../js/validation.js"></script>
+		<script src="js/functions.js"></script>
+		<link rel="stylesheet" type="text/css" href="../libs/SemanticUI/semantic.css" />
+		<link rel="stylesheet" type="text/css" href="../css/header.css" />
+		<title>Skill Tester Test editor</title>
+		<style>
+			.ui.form .ui.dropdown {
+				width : 300px;
+			}
+
+			.slider_display {
+				vertical-align : top;
+				margin-left : 5px;
+			}
+
+			.ui.form input[type=number] {
+				width : 5.5em;
+			}
+
+			.ui.table tr.tablefilter th {
+				padding : 0px;
+			}
+
+			.ui.table tr.tablefilter th .selection.dropdown {
+				width : 100%;
+				height : 100%;
+				min-height : 0px;
+				font-weight : normal;
+				padding-top : 0.2em;
+				padding-bottom : 0.2em;
+			}
+
+			.ui.table tr.tablefilter th .selection.used{
+				width : calc(100% - 15px);
+			}
+
+			#questions_list tbody tr {
+				cursor : pointer;
+			}
+
+			tbody tr:hover {
+				background-color: #ccc;
+			}
+		</style>
+		<script type="text/javascript">
+			var VALIDATIONS = {
+					"user" : {"require" : {}, "tests" : [validation_not_empty]},
+				};
+
+			function on_validation(data)
+			{
+				var new_data = {};
+				new_data["id"] = data["tid"];
+				new_data["user"] = data["user"];
+				new_data["finished"] = data["finished"];
+
+				if (!("question[]" in data))
+				{
+					data["question[]"] = [];
+				}
+
+				new_data["questions"] = JSON.stringify(data["question[]"]);
+				data = new_data;
+				var res = $.post("../api/admin/edit_test", data);
+				res.done(function(data) {document.location.assign("tests.htm");});
+				res.fail(function(data) {console.error(data.responseText); show_message("Impossible d'editer le test", "error")});
+			}
+
+			function edit_test(id)
+			{
+				/**
+				  * Load a test to edit. (async)
+				  * @param id the id of the test
+				  */
+				var load_test_fct = function (data) {
+						new_test();
+						$("input[name=tid]").val(data["id"]);
+						$("input[name=user]").val(data["username"]);
+						if (data["finished"])
+						{
+							$("input[name=finished][value=1]").prop("checked", true);
+							$("input[name=finished][value=0]").prop("checked", false);
+						}
+						else
+						{
+							$("input[name=finished][value=1]").prop("checked", false);
+							$("input[name=finished][value=0]").prop("checked", true);
+						}
+						var line;
+						for (var i in data["questions"])
+						{
+							line = data["questions"][i];
+							add_question(line["id"], line["name"], line["language"], line["type"]);
+						}
+
+					};
+
+				var data = {"id" : id};
+				var res = $.post("../api/admin/get_test", data, load_test_fct, "json");
+				res.fail(function(data) {console.error(data.responseText); show_message("Impossible de charger le test", "error")});
+			}
+
+			function new_test()
+			{
+				clear_test();
+			}
+
+			function clear_test()
+			{
+				$("form").each(function() {this.reset();});
+				update_all_sliders();
+				$('.ui.dropdown').dropdown("clear");
+				var option_lines = $('.option_line');
+				$("#test_questions_list>tbody tr").each(function() {
+						remove_question($(this).attr("id").substr("question_".length));
+					});
+			}
+
+			function load_languages()
+			{
+				/**
+				  * Load languages in the combobox. (async)
+				  */
+				var load_languages_fct = function(data) {
+					var $select = $('select[name=language]');
+					var val;
+					for (var i in data)
+					{
+						val = data[i];
+						$select.append($("<option />").val(val).text(val));
+					}
+
+				};
+
+				//clear
+				$("select[name=qlanguage] option[value!='']").remove();
+
+				var res = $.get("../api/admin/get_languages", null, load_languages_fct, "json");
+				res.fail(function(data) {console.error(data.responseText); show_message("Impossible de charger les langages", "error")});
+			}
+
+			function update_all_sliders()
+			{
+				$("input[type=range]").each(function() {update_slider_val(this);});
+			}
+
+			function update_slider_val(slider)
+			{
+				var $slider = $(slider);
+				var percent = parseInt($slider.val());
+				var nb_questions = parseInt($("input[name=nb_questions]").val());
+				var val = Math.round((nb_questions * percent) / 100);
+				$('#' + $slider.attr("name") + '_display').html(percent + "% (" + val + ")");
+			}
+
+			function generate()
+			{
+				var nb_questions = parseInt($("input[name=nb_questions]").val());
+				var nb_qcm = parseInt($("input[name=nb_qcm]").val());
+				var nb_question = parseInt($("input[name=nb_question]").val());
+				var nb_code = parseInt($("input[name=nb_code]").val());
+
+				nb_qcm = Math.round((nb_questions * nb_qcm) / 100);
+				nb_question = Math.round((nb_questions * nb_question) / 100);
+				nb_code = Math.round((nb_questions * nb_code) / 100);
+
+				var $error_elm = $("#error_generate");
+				var sum = (nb_qcm + nb_question + nb_code);
+				if (sum != nb_questions)
+				{
+					$error_elm.html("La somme des criteres depasse le nombre de questions (" + sum + " > " + nb_questions + ")");
+					$error_elm.show();
+					return;
+				}
+				else
+				{
+					$error_elm.hide();
+				}
+
+				var generate_fct = function(data) {
+						var line;
+						for (var i in data)
+						{
+							line = data[i];
+							add_question(line["id"], line["name"], line["language"], line["type"]);
+						}
+					};
+
+				var data = {
+						"qcm" : nb_qcm,
+						"question" : nb_question,
+						"code" : nb_code
+					};
+				data = {
+						"language" : $('select[name=language]').val(),
+						"filters" : JSON.stringify(data)
+					};
+				var res = $.post("../api/admin/get_questions_filter", data, generate_fct, "json");
+				res.fail(function(data) {console.error(data.responseText); show_message("Impossible de generer la liste de questions", "error")});
+
+			}
+
+			function load_questions()
+			{
+				var load_questions_fct = function(data) {
+						var tbody = $("#questions_list>tbody")
+						var line;
+						var tr;
+						for (var i in data)
+						{
+							line = data[i];
+							var line_id = line["id"];
+							var line_name = line["name"];
+							var line_language = line["language"];
+							var line_type = line["type"];
+							tr = $('<tr name="' + line_id + '"/>');
+							tr.append("<td>" + line_name + "</td>");
+							tr.append("<td>" + line_language + "</td>");
+							tr.append("<td>" + line_type + "</td>");
+							tr.bind("click", function() {
+									var $this = $(this);
+									var childs = $this.children();
+									add_question($this.attr("name"), $(childs[0]).html(), $(childs[1]).html(), $(childs[2]).html());
+								});
+							tbody.append(tr);
+						}
+					};
+				var res = $.get("../api/admin/get_questions", null, load_questions_fct, "json");
+				res.fail(function(data) {console.error(data.responseText);});
+			}
+
+			function add_question(id, name, language, type)
+			{
+				var tbody = $("#test_questions_list>tbody")
+				var tr = $('<tr id="question_' + id + '"/>');
+				tr.append('<td><input type="hidden" name="question[]" value="' + id + '"/>' + name + '</td>');
+				tr.append("<td>" + language + "</td>");
+				tr.append("<td>" + type + "</td>");
+				tr.append('<td><i class="big remove circle outline icon link" data-content="Supprimer" onclick="remove_question(\'' + id + '\')"></i></td>');
+				tbody.append(tr);
+
+				$('#question_' + id + ' .icon.link').popup();
+			}
+
+			function remove_question(id)
+			{
+				$('#question_' + id + ' .icon.link').popup('destroy');
+				$('#question_' + id).remove();
+			}
+
+			function validate_form(form)
+			{
+				/**
+				  * Proceed th form validation
+				  * @param form the DOM form element
+				  */
+				show_message();
+				validate(form, VALIDATIONS, on_validation);
+			}
+
+		</script>
+
+	</head>
+	<body>
+		<script type="text/javascript">
+			test_logged();
+		</script>
+		<h1>Editeur de test</h1>
+		<div class="ui icon menu">
+			<a class="item" href="tests.htm"><i class="arrow left icon"></i></a>
+		</div>
+		<form class="ui form" onsubmit="validate_form(this);return false;" autocomplete="off">
+			<input type="hidden" name="tid" />
+			<div class="field">
+				<label for="user">Nom du participant</label>
+				<input type="text" name="user" placeholder="Nom du participant" />
+			</div>
+			<div class="inline fields">
+				<label for="finished">Test termin&eacute; ?</label>
+				<div class="field">
+					<div class="ui radio checkbox">
+						<input type="radio" name="finished" value="0" />
+						<label>Non</label>
+					</div>
+					<div class="ui radio checkbox">
+						<input type="radio" name="finished" value="1" />
+						<label>Oui</label>
+					</div>
+				</div>
+			</div>
+			<div class="ui top attached tabular menu">
+				<a class="active item" data-tab="create_auto">Creation automatique</a>
+				<a class="item" data-tab="create_manual">Creation manuelle</a>
+			</div>
+			<div class="ui bottom attached active tab segment" data-tab="create_auto">
+				<div class="field">
+					<label for="language">Langage</label>
+					<select class="ui dropdown" name="language">
+						<option value="">Language</option>
+					</select>
+				</div>
+				<div class="field">
+					<label for="nb_questions">Nombre de questions</label>
+					<input type="number" name="nb_questions" min="0" value="10" onchange="update_all_sliders()" />
+				</div>
+				<div class="field">
+					<label for="nb_qcm">QCM</label>
+					<input type="range" name="nb_qcm" min="0" max="100" step="5" value="50" oninput="update_slider_val(this)" onchange="update_slider_val(this)"/><span id="nb_qcm_display" class="slider_display"></span>
+				</div>
+				<div class="field">
+					<label for="nb_question">Question</label>
+					<input type="range" name="nb_question" min="0" max="100" step="5" value="40" oninput="update_slider_val(this)" onchange="update_slider_val(this)"/><span id="nb_question_display" class="slider_display"></span>
+				</div>
+				<div class="field">
+					<label for="nb_code">Code</label>
+					<input type="range" name="nb_code" min="0" max="100" step="5" value="10" oninput="update_slider_val(this)" onchange="update_slider_val(this)"/><span id="nb_code_display" class="slider_display"></span>
+				</div>
+				<button class="ui primary button" onclick="generate();return false">Generer</button><div class="ui red message" id="error_generate"></div>
+			</div>
+			<div class="ui bottom attached tab segment" data-tab="create_manual">
+				<table class="ui sortable celled table" id="questions_list">
+					<thead>
+						<tr>
+							<th>Nom de la question</th>
+							<th>Langage</th>
+							<th>Type</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+			</div>
+			<br />
+			<br />
+			<label>Liste des questions du test :</label>
+			<table class="ui sortable celled table" id="test_questions_list">
+				<thead>
+					<tr>
+						<th>Nom de la question</th>
+						<th>Langage</th>
+						<th>Type</th>
+						<th>Action</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+			<br />
+			<div id="message_box"></div>
+			<button class="ui primary button" type="submit">Valider</button>
+			<button class="ui button" onclick="clear_test();return false">Effacer</button>
+		</form>
+		<script type="text/javascript">
+			display_header("Administration des Tests Techniques", "..");
+			load_languages();
+			load_questions();
+
+			$('.menu .item').tab();
+			$('input[type=range]').each(function() { update_slider_val(this); });
+			$("#error_generate").hide();
+
+			var id = get_url_param("id");
+			if (id)
+			{
+				edit_test(id);
+			}
+			else
+			{
+				new_test();
+			}
+		</script>
+	</body>
+</html>

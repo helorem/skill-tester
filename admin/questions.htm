@@ -1,0 +1,121 @@
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+		<script src="../libs/jquery-2.1.1.js"></script>
+		<script src="../libs/SemanticUI/semantic.js"></script>
+		<script src="../libs/jquery.tablesort.js"></script>
+		<script src="../libs/jquery.tablefilter.js"></script>
+		<script src="../js/functions.js"></script>
+		<script src="js/functions.js"></script>
+		<link rel="stylesheet" type="text/css" href="../libs/SemanticUI/semantic.css" />
+		<link rel="stylesheet" type="text/css" href="../css/header.css" />
+		<title>Skill Tester Admin Questions</title>
+		<style>
+			.ui.table tr.tablefilter th {
+				padding : 0px;
+			}
+
+			.ui.table tr.tablefilter th .selection.dropdown {
+				width : 100%;
+				height : 100%;
+				min-height : 0px;
+				font-weight : normal;
+				padding-top : 0px;
+				padding-bottom : 0px;
+				margin-top : 0.2em;
+				margin-bottom : 0.2em;
+			}
+
+			.ui.search.selection.dropdown > input.search {
+				padding-top : 0px;
+				padding-bottom : 0px;
+			}
+
+			.ui.table tr.tablefilter th .selection.used{
+				width : calc(100% - 15px);
+			}
+
+			tbody tr:hover {
+				background-color: #ccc;
+			}
+
+		</style>
+		<script type="text/javascript">
+			function edit_question(id)
+			{
+				document.location.assign("edit_question.htm?id=" + id);
+			}
+
+			function load()
+			{
+				var load_questions_fct = function(data) {
+						var tbody = $("#questions_list>tbody")
+						var line;
+						var tr;
+						for (var i in data)
+						{
+							line = data[i];
+							tr = $('<tr name="' + line["id"] + '"/>');
+							tr.append("<td>" + line["name"] +"</td>");
+							tr.append("<td>" + line["language"] +"</td>");
+							tr.append("<td>" + line["type"] +"</td>");
+							tr.append(  '<td>' +
+											'<i class="big edit icon link" data-content="Editer" onclick="edit_question(\'' + line["id"] + '\')"></i>' +
+											'<i class="big ban icon link" data-content="Supprimer" onclick="remove_question(\'' + line["id"] + '\')"></i>' +
+										'</td>');
+							tbody.append(tr);
+						}
+
+						$('table').tablefilter();
+
+					};
+
+				var res = $.get("../api/admin/get_questions", null, load_questions_fct, "json");
+				res.fail(function(data) {console.error(data.responseText);});
+			}
+
+			function remove_question(id)
+			{
+				var success_fct = function() {
+						$('tr[name=' + id + '] .icon.link').popup('destroy');
+						$('tr[name=' + id + ']').remove();
+					};
+
+				var data = {"id" : id};
+				var res = $.post("../api/admin/delete_question", data, success_fct);
+				res.fail(function(data) {console.error(data.responseText);});
+			}
+
+		</script>
+	</head>
+	<body>
+		<script type="text/javascript">
+			test_logged();
+		</script>
+		<h1>Liste des questions</h1>
+		<div class="ui icon menu">
+			<a class="item" href="index.htm"><i class="arrow left icon"></i></a>
+			<a class="item" href="edit_question.htm"><i class="plus icon"></i></a>
+		</div>
+		<table class="ui sortable celled table" id="questions_list">
+			<thead>
+				<tr>
+					<th>Nom de la question</th>
+					<th>Langage</th>
+					<th>Type</th>
+					<th class="no-filter no-sort">Action</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+		<script type="text/javascript">
+			display_header("Administration des Tests Techniques", "..");
+			load();
+
+			$('table').tablesort();
+			$('table').tablefilter();
+			$('.ui.dropdown').dropdown();
+		</script>
+	</body>
+</html>

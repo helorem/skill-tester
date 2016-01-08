@@ -1,0 +1,65 @@
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+		<script src="libs/jquery-2.1.1.js"></script>
+		<script src="libs/SemanticUI/semantic.js"></script>
+		<script src="js/validation.js"></script>
+		<script src="js/functions.js"></script>
+		<link rel="stylesheet" type="text/css" href="libs/SemanticUI/semantic.css" />
+		<link rel="stylesheet" type="text/css" href="css/header.css" />
+		<title>Skill Tester</title>
+		<script type="text/javascript">
+			function init()
+			{
+				var load_fct = function(data) {
+						data.sort()
+
+						var $select = $("select[name=username]");
+						var $option;
+						var username;
+						for (var i in data)
+						{
+							username = data[i];
+							$option = $("<option />").val(username).html(username);
+							$select.append($option);
+						}
+						$select.dropdown();
+					};
+
+					var res = $.get("api/get_available_tests", null, load_fct, "json");
+					res.fail(function(data) {console.error(data.responseText);});
+			}
+
+			function auth()
+			{
+				var $elm = $("select[name=username]");
+				if (!validation_not_empty($elm))
+				{
+					return;
+				}
+
+				var data = {"username" : $elm.val()};
+				var res = $.post("api/select_test", data);
+				res.done(function(data) {document.location.assign("index.htm");});
+				res.fail(function(data) {console.error(data.responseText); show_field_error($elm, "Erreur d'authentification");});
+
+			}
+		</script>
+	</head>
+	<body>
+		<div class="ui main text container">
+			<form class="ui large form" onsubmit="auth();return false;">
+				<div class="field">
+					<select class="ui search dropdown" name="username">
+						<option value="">Votre nom</option>
+					</select>
+				</div>
+				<button class="ui fluid large submit button">Commencer le test</div>
+			</form>
+		</div>
+		<script>
+			display_header("Test Technique");
+			init();
+		</script>
+	</body>
+</html>

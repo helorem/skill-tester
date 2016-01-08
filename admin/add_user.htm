@@ -1,0 +1,67 @@
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+		<script src="../libs/jquery-2.1.1.js"></script>
+		<script src="../libs/SemanticUI/semantic.js"></script>
+		<script src="../js/functions.js"></script>
+		<script src="../js/validation.js"></script>
+		<script src="js/functions.js"></script>
+		<link rel="stylesheet" type="text/css" href="../libs/SemanticUI/semantic.css" />
+		<link rel="stylesheet" type="text/css" href="../css/header.css" />
+		<title>Skill Tester User editor</title>
+		<script type="text/javascript">
+			var VALIDATIONS = {
+					"login" :		  {"require" : {},					 "tests" : [validation_not_empty]},
+					"password" :	  {"require" : {},					 "tests" : [validation_not_empty]},
+				};
+
+			function on_validation(data)
+			{
+				var res = $.post("../api/admin/create_user", data);
+				res.done(function(data) { document.location.assign("users.htm"); });
+				res.fail(function(data) {console.error(data.responseText); show_message("Impossible de creer l'utilsiateur", "error")});
+			}
+
+			function clear_user()
+			{
+				$("input").val("");
+			}
+
+			function validate_form(form)
+			{
+				/**
+				  * Proceed th form validation
+				  * @param form the DOM form element
+				  */
+				show_message();
+				validate(form, VALIDATIONS, on_validation);
+			}
+
+		</script>
+	</head>
+	<body>
+		<script type="text/javascript">
+			test_logged();
+		</script>
+		<h1>Creation d'utilisateur</h1>
+		<div class="ui icon menu">
+			<a class="item" href="users.htm"><i class="arrow left icon"></i></a>
+		</div>
+		<form class="ui form" onsubmit="validate_form(this);return false;" autocomplete="off">
+			<div class="field">
+				<label for="login">Login</label>
+				<input type="text" name="login" placeholder="Login" />
+			</div>
+			<div class="field">
+				<label for="password">Mot de passe</label>
+				<input type="text" name="password" placeholder="Mot de passe" />
+			</div>
+			<div id="message_box"></div>
+			<button class="ui primary button" type="submit">Valider</button>
+			<button class="ui button" type="reset" onclick="clear_user()">Effacer</button>
+		</form>
+		<script type="text/javascript">
+			display_header("Administration des Tests Techniques", "..");
+		</script>
+	</body>
+</html>

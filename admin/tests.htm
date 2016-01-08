@@ -1,0 +1,133 @@
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+		<script src="../libs/jquery-2.1.1.js"></script>
+		<script src="../libs/SemanticUI/semantic.js"></script>
+		<script src="../libs/jquery.tablesort.js"></script>
+		<script src="../libs/jquery.tablefilter.js"></script>
+		<script src="../js/functions.js"></script>
+		<script src="js/functions.js"></script>
+		<link rel="stylesheet" type="text/css" href="../libs/SemanticUI/semantic.css" />
+		<link rel="stylesheet" type="text/css" href="../css/header.css" />
+		<title>Skill Tester Admin Tests</title>
+		<style>
+			.ui.table tr.tablefilter th {
+				padding : 0px;
+			}
+
+			.ui.table tr.tablefilter th .selection.dropdown {
+				width : 100%;
+				height : 100%;
+				min-height : 0px;
+				font-weight : normal;
+				padding-top : 0px;
+				padding-bottom : 0px;
+				margin-top : 0.2em;
+				margin-bottom : 0.2em;
+			}
+
+			.ui.table tr.tablefilter th .selection.used{
+				width : calc(100% - 15px);
+			}
+
+			tbody tr:hover {
+				background-color: #ccc;
+			}
+		</style>
+		<script type="text/javascript">
+			function details_test(id)
+			{
+				document.location.assign("details_test.htm?id=" + id);
+			}
+
+			function edit_test(id)
+			{
+				document.location.assign("edit_test.htm?id=" + id);
+			}
+
+			function load()
+			{
+				var load_tests_fct = function(data) {
+						var tbody = $("#tests_list>tbody")
+						var line;
+						var tr;
+						for (var i in data)
+						{
+							line = data[i];
+							tr = $('<tr name="' + line["id"] + '"/>');
+							tr.append($('<td />').text(line["creation_date"]));
+							tr.append($('<td />').text(line["username"]));
+							tr.append($('<td />').text((line["finished"] == 1) ? "Oui" : "Non"));
+							tr.append($('<td />').text(line["nb_answers"] + "/" + line["nb_questions"]));
+							//avoid zero division
+							if (line["nb_answers"] == 0)
+							{
+								tr.append("<td>0 %</td>");
+							}
+							else
+							{
+								tr.append($('<td />').text(Math.round((line["nb_success"] * 100) / line["nb_answers"]) + " %"));
+							}
+							tr.append(  '<td>' +
+											'<i class="big unhide icon link" data-content="Details" onclick="details_test(\'' + line["id"] + '\')"></i>' +
+											'<i class="big edit icon link" data-content="Editer" onclick="edit_test(\'' + line["id"] + '\')"></i>' +
+											'<i class="big ban icon link" data-content="Supprimer" onclick="remove_test(\'' + line["id"] + '\')"></i>' +
+										'</td>');
+							tbody.append(tr);
+						}
+
+						$('table').tablefilter();
+					};
+
+				var res = $.get("../api/admin/get_tests", null, load_tests_fct, "json");
+				res.fail(function(data) {console.error(data.responseText);});
+			}
+
+			function remove_test(id)
+			{
+				var success_fct = function() {
+						$('tr[name=' + id + '] .icon.link').popup('destroy');
+						$('tr[name=' + id + ']').remove();
+					};
+
+				var data = {"id" : id};
+				var res = $.post("../api/admin/delete_test", data, success_fct);
+				res.fail(function(data) {console.error(data.responseText);});
+			}
+
+		</script>
+	</head>
+	<body>
+		<script type="text/javascript">
+			test_logged();
+		</script>
+		<h1>Liste des tests</h1>
+		<div class="ui icon menu">
+			<a class="item" href="index.htm"><i class="arrow left icon"></i></a>
+			<a class="item" href="edit_test.htm"><i class="plus icon"></i></a>
+		</div>
+		<table class="ui sortable celled table" id="tests_list">
+			<thead>
+				<tr>
+					<th>Date</th>
+					<th>Participant</th>
+                    <th>Termin&eacute; ?</th>
+					<th>Progression</th>
+					<th>Reussite</th>
+					<th class="no-filter no-sort">Action</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+		<script type="text/javascript">
+			display_header("Administration des Tests Techniques", "..");
+			load();
+
+			$('table').tablesort();
+			$('table').tablefilter();
+			$('.ui.dropdown').dropdown();
+			$('.icon.link').popup();
+		</script>
+	</body>
+</html>

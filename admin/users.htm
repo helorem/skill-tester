@@ -1,0 +1,104 @@
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+		<script src="../libs/jquery-2.1.1.js"></script>
+		<script src="../libs/SemanticUI/semantic.js"></script>
+		<script src="../libs/jquery.tablesort.js"></script>
+		<script src="../libs/jquery.tablefilter.js"></script>
+		<script src="../js/functions.js"></script>
+		<script src="js/functions.js"></script>
+		<link rel="stylesheet" type="text/css" href="../libs/SemanticUI/semantic.css" />
+		<link rel="stylesheet" type="text/css" href="../css/header.css" />
+		<title>Skill userer Admin Users</title>
+		<style>
+			.ui.table tr.tablefilter th {
+				padding : 0px;
+			}
+
+			.ui.table tr.tablefilter th .selection.dropdown {
+				width : 100%;
+				height : 100%;
+				min-height : 0px;
+				font-weight : normal;
+				padding-top : 0px;
+				padding-bottom : 0px;
+				margin-top : 0.2em;
+				margin-bottom : 0.2em;
+			}
+
+			.ui.table tr.tablefilter th .selection.used{
+				width : calc(100% - 15px);
+			}
+
+			tbody tr:hover {
+				background-color: #ccc;
+			}
+		</style>
+		<script type="text/javascript">
+			function load()
+			{
+				var load_users_fct = function(data) {
+						var tbody = $("#users_list>tbody")
+						var line;
+						var tr;
+						for (var i in data)
+						{
+							line = data[i];
+							tr = $('<tr name="' + line["id"] + '"/>');
+							tr.append("<td>" + line["login"] +"</td>");
+							tr.append(  '<td>' +
+											'<i class="big ban icon link" data-content="Supprimer" onclick="remove_user(\'' + line["id"] + '\')"></i>' +
+										'</td>');
+							tbody.append(tr);
+						}
+
+						$('table').tablefilter();
+					};
+
+				var res = $.get("../api/admin/get_users", null, load_users_fct, "json");
+				res.fail(function(data) {console.error(data.responseText);});
+			}
+
+			function remove_user(id)
+			{
+				var success_fct = function() {
+						$('tr[name=' + id + '] .icon.link').popup('destroy');
+						$('tr[name=' + id + ']').remove();
+					};
+
+				var data = {"id" : id};
+				var res = $.post("../api/admin/delete_user", data, success_fct);
+				res.fail(function(data) {console.error(data.responseText);});
+			}
+
+		</script>
+	</head>
+	<body>
+		<script type="text/javascript">
+			test_logged();
+		</script>
+		<h1>Liste des utilisateurs</h1>
+		<div class="ui icon menu">
+			<a class="item" href="index.htm"><i class="arrow left icon"></i></a>
+			<a class="item" href="add_user.htm"><i class="plus icon"></i></a>
+		</div>
+		<table class="ui sortable celled table" id="users_list">
+			<thead>
+				<tr>
+					<th>Login</th>
+					<th class="no-filter no-sort">Action</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+		<script type="text/javascript">
+			display_header("Administration des Tests Techniques", "..");
+			load();
+
+			$('table').tablesort();
+			$('table').tablefilter();
+			$('.ui.dropdown').dropdown();
+		</script>
+	</body>
+</html>

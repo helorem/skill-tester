@@ -1,0 +1,43 @@
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+		<script src="../libs/jquery-2.1.1.js"></script>
+		<script src="../libs/SemanticUI/semantic.js"></script>
+		<script src="../js/functions.js"></script>
+		<script src="js/functions.js"></script>
+		<link rel="stylesheet" type="text/css" href="../libs/SemanticUI/semantic.css" />
+		<link rel="stylesheet" type="text/css" href="../css/header.css" />
+		<title>Skill Tester Admin</title>
+		<style>
+			.ui.button {
+				display : block;
+				margin-bottom : 20px;
+			}
+
+			h1 {
+				text-align : center;
+				margin-bottom : 50px;
+			}
+		</style>
+		<script type="text/javascript">
+			function logout()
+			{
+				var res = $.get("../api/admin/logout");
+				res.done(function(data) { document.location.assign("login.htm"); });
+				res.fail(function(data) { console.error(data.responseText); });
+			}
+		</script>
+	</head>
+	<body>
+		<script type="text/javascript">
+			test_logged();
+		</script>
+		<a href="questions.htm" class="ui button">Gestionnaire de questions</a>
+		<a href="tests.htm"><div class="ui button">Gestionnaire de tests</div></a>
+		<a href="users.htm"><div class="ui button">Gestionnaire d'utilisateurs</div></a>
+		<a href="javascript:logout()"><div class="ui button">Deconnexion</div></a>
+		<script type="text/javascript">
+			display_header("Administration des Tests Techniques", "..");
+		</script>
+	</body>
+</html>

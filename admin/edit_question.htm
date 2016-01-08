@@ -1,0 +1,351 @@
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+		<script src="../libs/jquery-2.1.1.js"></script>
+		<script src="../libs/SemanticUI/semantic.js"></script>
+		<script src="../libs/codemirror/codemirror.js"></script>
+		<script src="../libs/codemirror/mode/xml/xml.js"></script>
+		<script src="../js/functions.js"></script>
+		<script src="../js/validation.js"></script>
+		<script src="js/functions.js"></script>
+		<link rel="stylesheet" type="text/css" href="../libs/SemanticUI/semantic.css" />
+		<link rel="stylesheet" type="text/css" href="../libs/codemirror/codemirror.css" />
+		<link rel="stylesheet" type="text/css" href="../css/header.css" />
+		<title>Skill Tester Question editor</title>
+		<style>
+			.ui.dropdown {
+				width : 300px;
+			}
+
+			.CodeMirror {
+				margin: 0em;
+				outline: medium none;
+				line-height: 1.2142em;
+				padding: 0.67861em 1em;
+				font-size: 1em;
+				background: none repeat scroll 0% 0% #FFF;
+				border: 1px solid rgba(39, 41, 43, 0.15);
+				color: rgba(0, 0, 0, 0.8);
+				border-radius: 0.2857rem;
+				box-shadow: 0em 0em 0em 0em transparent inset;
+				transition: background-color 0.2s ease 0s, color 0.2s ease 0s, box-shadow 0.2s ease 0s, border-color 0.2s ease 0s;
+			}
+
+			#qtext_result {
+				margin : 5px;
+				padding : 10px;
+				border : 1px solid grey;
+			}
+		</style>
+		<script type="text/javascript">
+			var VALIDATIONS = {
+					"qname" :		  {"require" : {},					 "tests" : [validation_not_empty]},
+					"qlanguage" :	  {"require" : {},					 "tests" : [validation_not_empty]},
+					"qtext" :		  {"require" : {},					 "tests" : [validation_not_empty]},
+					"qtype" :		  {"require" : {},					 "tests" : [validation_not_empty]},
+					"qanswer" :		{"require" : {"qtype" : "question"}, "tests" : [validation_not_empty]},
+					"qcode_answer" :   {"require" : {"qtype" : "code"},	 "tests" : [validation_not_empty]}
+				};
+
+			function on_validation(data)
+			{
+				var new_data = {};
+				new_data["id"] = data["qid"];
+				new_data["name"] = data["qname"];
+				new_data["language"] = data["qlanguage"];
+				new_data["type"] = data["qtype"];
+				new_data["text"] = data["qtext"];
+				new_data["options"] = [];
+				new_data["answers"] = [];
+
+				switch(data["qtype"])
+				{
+					case "qcm":
+						if (!("qanswer_option" in data))
+						{
+							show_message("Aucune reponse selectionnee", "error");
+							return;
+						}
+						var answer_id = data["qanswer_option"];
+						var val;
+						for (var key in data)
+						{
+							if (key.match(/^qanswer_text_/))
+							{
+								val = data[key];
+								new_data["options"].push(val);
+								if (key.substr("qanswer_text_".length) == answer_id)
+								{
+									new_data["answers"].push(val);
+								}
+							}
+						}
+						break;
+
+					case "question":
+						new_data["answers"].push(data["qanswer"]);
+						break;
+
+					case "code":
+						new_data["answers"].push(data["qcode_answer"]);
+						break;
+				}
+
+				new_data["options"] = JSON.stringify(new_data["options"]);
+				new_data["answers"] = JSON.stringify(new_data["answers"]);
+
+				data = new_data;
+				var res = $.post("../api/admin/edit_question", data);
+				res.done(function(data) {document.location.assign("questions.htm");});
+				res.fail(function(data) {console.error(data.responseText); show_message("Impossible d'editer la question", "error")});
+			}
+
+			function edit_question(id)
+			{
+				/**
+				  * Load a question to edit. (async)
+				  * @param id the id of the question
+				  */
+				var load_question_fct = function (data) {
+						new_question();
+						$("input[name=qid]").val(data["id"]);
+						$("input[name=qname]").val(data["name"]);
+						$("select[name=qlanguage]").dropdown("set selected", data["language"]);
+						$("textarea[name=qtext]").val(data["text"]);
+						$('.CodeMirror')[0].CodeMirror.setValue(data["text"]);
+						$("select[name=qtype]").dropdown("set selected", data["type"]);
+
+						switch (data["type"])
+						{
+							case "qcm":
+									var option;
+									var is_answer = false;
+									for (var i in data["options"])
+									{
+										option = data["options"][i];
+										if ($.inArray(option, data["answers"]) != -1)
+										{
+											is_answer = true;
+										}
+										else
+										{
+											is_answer = false;
+										}
+										add_option(i, option, is_answer);
+									}
+								break;
+							case "question":
+								$("input[name=qanswer]").val(data["answers"][0]);
+								break;
+							case "code":
+								$("textarea[name=qcode_answer]").val(data["answers"][0]);
+								break;
+						}
+					};
+
+				var data = {"id" : id};
+				var res = $.post("../api/admin/get_question", data, load_question_fct, "json");
+				res.fail(function(data) {console.error(data.responseText); show_message("Impossible de charger la question", "error")});
+			}
+
+			function new_question()
+			{
+				clear_question();
+			}
+
+			function clear_question()
+			{
+				$('.qtype_display').hide();
+				$("input, textarea").val("");
+				$('.ui.dropdown').dropdown("clear");
+				$('.CodeMirror')[0].CodeMirror.setValue("");
+				var option_lines = $('.option_line');
+				option_lines.each(function() {
+						remove_option($(this).attr("id").substr("option_".length));
+					});
+			}
+
+			function setTypeDisplay(select_elm)
+			{
+				var display_type = select_elm.value;
+				$('.qtype_display:visible').hide();
+				$('#qtype_display_' + display_type).show();
+			}
+
+			function add_option(id, val, is_answer)
+			{
+				if (!id)
+				{
+					id = "x" + Date.now();
+				}
+				if (!val)
+				{
+					val = "";
+				}
+				if (is_answer)
+				{
+					is_answer = " checked";
+				}
+				var elm = $('<tr id="option_' + id + '" class="option_line">' +
+							'	<td>' +
+							'		<input type="text" class="form_field" name="qanswer_text_' + id + '" value="' + val + '" />' +
+							'	</td>' +
+							'	<td>' +
+							'		<div class="ui radio checkbox">' +
+							'			<input type="radio" class="form_field" name="qanswer_option" value="' + id + '"' + is_answer + '>' +
+							'		</div>' +
+							'	</td>' +
+							'	<td>' +
+							'		<i class="big remove circle outline icon link" data-content="Supprimer" onclick="remove_option(\'' + id + '\')"></i>' +
+							'	</td>' +
+							'</tr>');
+
+				elm.insertBefore("#question_options>tbody>tr:last-child");
+				$('#option_' + id + ' .ui.radio.checkbox').checkbox();
+				$('#option_' + id + ' .icon.link').popup();
+			}
+
+			function remove_option(id)
+			{
+				$('#option_' + id + ' .icon.link').popup('destroy');
+				$('#option_' + id).remove();
+			}
+
+			function load_languages()
+			{
+				/**
+				  * Load languages in the combobox. (async)
+				  */
+				var load_languages_fct = function(data) {
+					var $select = $('select[name=qlanguage]');
+					var val;
+					for (var i in data)
+					{
+						val = data[i];
+						$select.append($("<option />").val(val).text(val));
+					}
+
+				};
+
+				//clear
+				$("select[name=qlanguage] option[value!='']").remove();
+
+				var res = $.get("../api/admin/get_languages", null, load_languages_fct, "json");
+				res.fail(function(data) {console.error(data.responseText); show_message("Impossible de charger les langages", "error")});
+			}
+
+			function validate_form(form)
+			{
+				/**
+				  * Proceed th form validation
+				  * @param form the DOM form element
+				  */
+				show_message();
+				$("textarea[name=qtext]").val($('.CodeMirror')[0].CodeMirror.getValue());
+				validate(form, VALIDATIONS, on_validation);
+			}
+
+		</script>
+	</head>
+	<body>
+		<script type="text/javascript">
+			test_logged();
+		</script>
+		<h1>Editeur de question</h1>
+		<div class="ui icon menu">
+			<a class="item" href="questions.htm"><i class="arrow left icon"></i></a>
+		</div>
+		<form class="ui form" onsubmit="validate_form(this);return false;" autocomplete="off">
+			<input type="hidden" name="qid" />
+			<div class="field">
+				<label for="qname">Nom de la question</label>
+				<input type="text" name="qname" placeholder="Nom de la question"/>
+			</div>
+			<div class="field">
+				<label for="qlanguage">Langage</label>
+				<select class="ui dropdown search" name="qlanguage">
+					<option value="">Language</option>
+				</select>
+				<i class="help circle icon link" data-content="Si vous tapez un nouveau langage au lieu d'en selectionner un, il sera cree"></i>
+			</div>
+			<div class="field">
+				<label for="qtext">Enonce</label>
+				<textarea id="qtext" name="qtext"></textarea>
+			</div>
+			<label>Apercu</label>
+			<div id="qtext_result">
+			</div>
+			<br />
+			<div class="field">
+				<label for="qtype">Type de question</label>
+				<select class="ui dropdown" name="qtype" onchange="setTypeDisplay(this)">
+					<option value="">Type</option>
+					<option value="qcm">QCM</option>
+					<option value="question">Question</option>
+					<option value="code">Code</option>
+				</select>
+			</div>
+			<div id="qtype_display_qcm" class="qtype_display field">
+				<label>Liste options de reponses</label>
+				<table id="question_options" class="ui celled table">
+					<thead>
+						<tr>
+							<th>Option</th>
+							<th>Reponse</th>
+							<th>Action</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td colspan="3">
+								<button class="ui labeled icon button" onclick="add_option();return false;">
+									<i class="plus icon"></i>
+									Ajouter une option
+								</button>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div id="qtype_display_question" class="qtype_display field">
+				<label for="qanswer">Reponse</label>
+				<input type="text" name="qanswer" placeholder="Reponse" />
+			</div>
+			<div id="qtype_display_code" class="qtype_display field">
+				<label for="qcode_answer">Reponse</label>
+				<textarea name="qcode_answer"></textarea>
+			</div>
+			<div id="message_box"></div>
+			<button class="ui primary button" type="submit">Valider</button>
+			<button class="ui button" type="reset" onclick="clear_question()">Effacer</button>
+		</form>
+		<script type="text/javascript">
+			display_header("Administration des Tests Techniques", "..");
+			load_languages();
+
+			$('.ui.dropdown').dropdown({"allowAdditions" : true});
+			$('.icon.link').popup();
+			$('.ui.radio.checkbox').checkbox();
+
+			var cm_qtext = CodeMirror.fromTextArea(document.getElementById("qtext"),
+				{
+					"mode" : "application/xml",
+				});
+			cm_qtext.on("change", function(cm, change_obj) {
+						$('#qtext_result').html(parseQCode(cm.getValue()));
+						var language = $('select[name=qlanguage]').val().toLowerCase();
+						render_code(language, "../");
+					});
+
+			var id = get_url_param("id");
+			if (id)
+			{
+				edit_question(id);
+			}
+			else
+			{
+				new_question();
+			}
+		</script>
+	</body>
+</html>
