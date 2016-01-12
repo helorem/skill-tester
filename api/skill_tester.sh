@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if[ "x${SKILL_TESTER_HOME}y" = "xy" ]
+if [ "x${SKILL_TESTER_HOME}y" = "xy" ]
 then
     SKILL_TESTER_HOME="/home/web/net.emaxilde.capfi/htdocs/skill-tester"
 fi
