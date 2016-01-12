@@ -88,7 +88,7 @@ function validation_not_empty(elm)
 	var res = true;
 	if (elm.val() == "")
 	{
-		show_field_error(elm, "Ce champ ne doit pas etre vide");
+		show_field_error(elm, "Ce champ ne peut pas être vide");
 		res = false;
 	}
 	else
