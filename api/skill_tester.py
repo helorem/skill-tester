@@ -602,7 +602,7 @@ if __name__ == "__main__":
         app.secret_key = generate_random_secret(1024)
 
         #TODO improve port (conf file ?)
-        app.debug = True
+        app.debug = False
         app.run(port=5123)
     finally:
         DBConsumer.get_instance().close()

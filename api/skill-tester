@@ -1,0 +1,70 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          skill-tester
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: daemon to test skills
+### END INIT INFO
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+DAEMON=/usr/bin/skill_tester.sh
+NAME=skill-tester
+SNAME=skill-tester
+DESC="Skill Tester"
+PIDFILE="/var/run/$NAME.pid"
+PNAME="skill-tester"
+OPTIONS=""
+DOPTIONS=""
+
+test -x $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+test -f /etc/default/skill-tester && . /etc/default/skill-tester
+
+case "$1" in
+    start)
+        log_begin_msg "Starting $DESC: $NAME"
+
+        pid=$( pidofproc -p $PIDFILE $DAEMON )
+        if [ -n "$pid" ] ; then
+            log_begin_msg ". Already running"
+            log_end_msg 0
+            exit 0
+        fi
+
+        start-stop-daemon --start --background --quiet --oknodo --exec $DAEMON --make-pidfile --pidfile=$PIDFILE $OPTIONS $DOPTIONS
+
+        log_end_msg $?
+        ;;
+    stop)
+        log_begin_msg "Stopping $DESC: $NAME"
+
+        start-stop-daemon --stop --retry 5 --quiet --oknodo --pidfile=$PIDFILE
+        rm -f $PIDFILE
+
+        log_end_msg $?
+        ;;
+    restart)
+        log_begin_msg "Restarting $DESC: $NAME"
+
+        start-stop-daemon --stop --retry 5 --quiet --oknodo --pidfile=$PIDFILE
+        rm -f $PIDFILE
+
+        start-stop-daemon --start --background --quiet --oknodo --exec $DAEMON --make-pidfile --pidfile=$PIDFILE $OPTIONS $DOPTIONS
+
+        log_end_msg $?
+        ;;
+    status)
+        status_of_proc $DAEMON $NAME
+        ;;
+    *)
+        N=/etc/init.d/$SNAME
+        echo "Usage: $N {start|stop|restart|status}" >&2
+        exit 1
+        ;;
+esac
+
+exit 0
