@@ -35,7 +35,7 @@ case "$1" in
             exit 0
         fi
 
-        start-stop-daemon --start --background --quiet --oknodo --exec $DAEMON --make-pidfile --pidfile=$PIDFILE $OPTIONS $DOPTIONS
+        start-stop-daemon --start --background --quiet --oknodo --exec $DAEMON --chuid www-data:www-data --make-pidfile --pidfile=$PIDFILE $OPTIONS $DOPTIONS
 
         log_end_msg $?
         ;;
@@ -53,7 +53,7 @@ case "$1" in
         start-stop-daemon --stop --retry 5 --quiet --oknodo --pidfile=$PIDFILE
         rm -f $PIDFILE
 
-        start-stop-daemon --start --background --quiet --oknodo --exec $DAEMON --make-pidfile --pidfile=$PIDFILE $OPTIONS $DOPTIONS
+        start-stop-daemon --start --background --quiet --oknodo --exec $DAEMON --chuid www-data:www-data --make-pidfile --pidfile=$PIDFILE $OPTIONS $DOPTIONS
 
         log_end_msg $?
         ;;
