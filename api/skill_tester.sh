@@ -7,4 +7,4 @@ then
 else
     cd "${SKILL_TESTER_HOME}/api" || exit 1
 fi
-exec python skill_tester.py 2>&1 > skill_tester.log
+exec python skill_tester.py > skill_tester.log 2>&1
