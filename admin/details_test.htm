@@ -76,7 +76,7 @@
 				{
 					return;
 				}
-				var percent = (nb_success * 100) / nb_questions;
+				var percent = Math.round((nb_success * 100) / nb_questions);
 
 
 				$("#success_chart").highcharts({
