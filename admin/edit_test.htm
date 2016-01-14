@@ -264,6 +264,17 @@
 				validate(form, VALIDATIONS, on_validation);
 			}
 
+			function duplicate()
+			{
+				/**
+				  * Duplicate the test, keep all data except ID and NAME
+				  */
+				$("input[name=tid]").val("");
+				$("input[name=user]").val("");
+				$("input[name=finished][value=1]").prop("checked", false);
+				$("input[name=finished][value=0]").prop("checked", true);
+			}
+
 		</script>
 
 	</head>
@@ -274,6 +285,7 @@
 		<h1>Editeur de test</h1>
 		<div class="ui icon menu">
 			<a class="item" href="tests.htm"><i class="arrow left icon"></i></a>
+			<a class="item" href="javascript:duplicate()"><i class="copy icon"></i></a>
 		</div>
 		<form class="ui form" onsubmit="validate_form(this);return false;" autocomplete="off">
 			<input type="hidden" name="tid" />
