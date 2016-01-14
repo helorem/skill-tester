@@ -2,6 +2,7 @@
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<script src="../libs/jquery-2.1.1.js"></script>
+		<script src="../libs/jquery-ui-1.11.4/jquery-ui.js"></script>
 		<script src="../libs/SemanticUI/semantic.js"></script>
 		<script src="../js/functions.js"></script>
 		<script src="../js/validation.js"></script>
@@ -386,6 +387,25 @@
 			{
 				new_test();
 			}
+
+			var $test_question_tbody = $("#test_questions_list tbody");
+			$test_question_tbody.sortable({
+					items: "tr",
+					appendTo: "parent",
+					axis: "y",
+					containment: "parent",
+					cursor: "move",
+					scroll: false
+				}).disableSelection();
+
+			//##### FIX JQuery BUG : wrong position when scrolled
+			$test_question_tbody.bind("sortstart", function (event, ui) {
+					ui.helper.css('margin-top', $(window).scrollTop() );
+				});
+			$test_question_tbody.bind("sortbeforestop", function (event, ui) {
+					ui.helper.css('margin-top', 0 );
+				});
+			//#####
 		</script>
 	</body>
 </html>
