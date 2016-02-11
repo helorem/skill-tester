@@ -1,4 +1,4 @@
-PWD=/home/helorem/tmp/deb
+PWD:=$(shell pwd)
 
 deb: clean
 	mkdir -p bin/skill-tester

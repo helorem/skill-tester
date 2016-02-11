@@ -2,6 +2,8 @@
 
 PATTERN="#GENERATED skill-tester"
 
+mkdir -p bin
+
 # Prepare addon
 ip="$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' skill-tester)"
 cp build/nginx_host.conf bin/nginx_host.conf
