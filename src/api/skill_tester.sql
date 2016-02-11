@@ -39,3 +39,6 @@ CREATE TABLE users (
 		login TEXT,
 		password TEXT
 	);
+
+INSERT INTO users (login, password) VALUES ('admin', 'd033e22ae348aeb5660fc2140aec35850c4da997');
+#default login=admin, default password=admin

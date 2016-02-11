@@ -35,7 +35,7 @@ case "$1" in
             exit 0
         fi
 
-        start-stop-daemon --start --background --quiet --oknodo --exec $DAEMON --chuid www-data:www-data --make-pidfile --pidfile=$PIDFILE $OPTIONS $DOPTIONS
+        start-stop-daemon --start --background --no-close --quiet --oknodo --exec $DAEMON --chuid www-data:www-data --make-pidfile --pidfile=$PIDFILE $OPTIONS $DOPTIONS
 
         log_end_msg $?
         ;;
@@ -58,7 +58,7 @@ case "$1" in
         log_end_msg $?
         ;;
     status)
-        status_of_proc $DAEMON $NAME
+        status_of_proc -p "${PIDFILE}" $DAEMON $NAME
         ;;
     *)
         N=/etc/init.d/$SNAME

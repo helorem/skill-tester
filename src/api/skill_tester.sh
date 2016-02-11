@@ -2,7 +2,7 @@
 
 if [ "x${SKILL_TESTER_HOME}y" = "xy" ]
 then
-    SKILL_TESTER_HOME="/home/web/net.emaxilde.capfi/htdocs/skill-tester"
+    SKILL_TESTER_HOME="/var/www/skill-tester"
 fi
 
 if [ ! -d "${SKILL_TESTER_HOME}/api" ]

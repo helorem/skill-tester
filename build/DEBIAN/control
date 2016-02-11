@@ -1,0 +1,11 @@
+Package: skill-tester
+Version: 1.0
+Section: custom
+Priority: optional
+Architecture: all
+Essential: no
+Pre-Depends: bash, sqlite3
+Depends: python-flask, python-sqlite
+Maintainer: Romain CONNESSON
+Description: Questions sets manager and client
+

@@ -1,0 +1,5 @@
+#!/bin/sh
+
+ln -s /etc/nginx/sites-available/skill-tester /etc/nginx/sites-enabled/
+sqlite3 /var/www/skill-tester/api/skill_tester.db < /var/www/skill-tester/api/skill_tester.sql
+chown -R www-data:www-data /var/www/skill-tester

@@ -1,0 +1,11 @@
+FROM debian
+ENV container docker
+RUN apt-get update
+RUN apt-get install -y vim bash
+RUN apt-get install -y dpkg-dev nginx
+RUN echo "deb file:/root ./" >> /etc/apt/sources.list
+ADD ./skill-tester.deb /root/skill-tester.deb
+RUN cd /root && dpkg-scanpackages . /dev/null | gzip -9c > /root/Packages.gz
+RUN apt-get update
+RUN apt-get install -y --force-yes skill-tester
+RUN rm /etc/nginx/sites-enabled/default

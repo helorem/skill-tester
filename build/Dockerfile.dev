@@ -1,0 +1,7 @@
+FROM debian
+ENV container docker
+RUN apt-get update
+RUN apt-get install -y vim bash
+RUN apt-get install -y dpkg-dev nginx sqlite3
+RUN apt-get install -y python-flask python-sqlite
+VOLUME ["/mnt/src"]
