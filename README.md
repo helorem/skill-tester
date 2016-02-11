@@ -3,7 +3,7 @@
 ## Description
 Skill Tester is an user interface to create question sets, and display them.
 
-Is is a volunteer project and was made for IT HR recruting process at for CapFi Tech.
+Is is a volunteer project and was made for IT HR recruting process at CapFi Tech.
 
 ## Requirement
 This project was optimized for Nginx. It could run with another WebServer, but not the deploy system.
