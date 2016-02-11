@@ -13,6 +13,12 @@ The container system is based on Docker.
 sudo apt-get install docker.io
 ```
 
+## Default configuration
+A default user is created : 
+username : admin
+pwd : admin
+DO NOT FORGET TO DELETE IT !
+
 ## Usage
 
 ### make deb
