@@ -2,10 +2,12 @@
 
 ## Description
 Skill Tester is an user interface to create question sets, and display them.
+
 Is is a volunteer project and was made for IT HR recruting process at for CapFi Tech.
 
 ## Requirement
 This project was optimized for Nginx. It could run with another WebServer, but not the deploy system.
+
 Morover, you should have a "default" site enabled.
 
 The container system is based on Docker.
@@ -15,8 +17,11 @@ sudo apt-get install docker.io
 
 ## Default configuration
 A default user is created : 
+
 username : admin
+
 pwd : admin
+
 DO NOT FORGET TO DELETE IT !
 
 ## Usage
